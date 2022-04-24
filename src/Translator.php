@@ -7,13 +7,28 @@
  * @author     Muhammet ŞAFAK <info@muhammetsafak.com.tr>
  * @copyright  Copyright © 2022 InitPHP Translator
  * @license    http://initphp.github.io/license.txt  MIT
- * @version    1.0
+ * @version    0.2
  * @link       https://www.muhammetsafak.com.tr
  */
 
 declare(strict_types=1);
 
 namespace InitPHP\Translator;
+
+use function strpos;
+use function explode;
+use function array_shift;
+use function is_array;
+use function is_object;
+use function method_exists;
+use function strtr;
+use function file_exists;
+use function glob;
+use function strtolower;
+use function basename;
+use function is_file;
+use function is_dir;
+use function rtrim;
 
 class Translator implements TranslatorInterface
 {
@@ -53,7 +68,7 @@ class Translator implements TranslatorInterface
         if(!is_dir($dir)){
             throw new TranslatorException("I couldn't find a directory in the (" . $dir . ") path.");
         }
-        $this->dir = $dir;
+        $this->dir = rtrim($dir, '/\\');
         return $this;
     }
 
@@ -158,7 +173,7 @@ class Translator implements TranslatorInterface
                 $r = $r[$subKey];
             }
         }else{
-            $r = $this->container[$this->current][$key] ?? null;
+            $r = $this->container[$language][$key] ?? null;
         }
         if($r === null){
             return null;

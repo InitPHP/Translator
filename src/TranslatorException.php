@@ -7,7 +7,7 @@
  * @author     Muhammet ŞAFAK <info@muhammetsafak.com.tr>
  * @copyright  Copyright © 2022 InitPHP Translator
  * @license    http://initphp.github.io/license.txt  MIT
- * @version    1.0
+ * @version    0.2
  * @link       https://www.muhammetsafak.com.tr
  */
 

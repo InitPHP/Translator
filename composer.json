@@ -8,6 +8,11 @@
             "InitPHP\\Translator\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\InitPHP\\Translator\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Muhammet ŞAFAK",
@@ -19,5 +24,8 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "9.5"
     }
 }
