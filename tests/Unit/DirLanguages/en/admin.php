@@ -1,4 +1,10 @@
 <?php
+
 return [
-    'dashboard'   => 'Dashboard',
+    'dashboard' => 'Dashboard',
+    'menu'      => [
+        'settings' => [
+            'title' => 'Settings',
+        ],
+    ],
 ];

@@ -1,0 +1,11 @@
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/Unit/FileLanguages/*
+        - tests/Unit/DirLanguages/*
+        - tests/Unit/Fixtures/*
+    tmpDir: build/phpstan
+    treatPhpDocTypesAsCertain: false

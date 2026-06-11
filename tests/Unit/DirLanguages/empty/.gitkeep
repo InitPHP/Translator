@@ -1,0 +1,2 @@
+# Keeps this intentionally empty language directory under version control so the
+# "directory with no *.php files" case can be exercised by the test suite.

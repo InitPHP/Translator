@@ -1,241 +1,353 @@
 <?php
+
 /**
- * Translator.php
+ * This file is part of the InitPHP Translator package.
  *
- * This file is part of InitPHP Translator.
- *
- * @author     Muhammet ŞAFAK <info@muhammetsafak.com.tr>
- * @copyright  Copyright © 2022 InitPHP Translator
- * @license    http://initphp.github.io/license.txt  MIT
- * @version    0.2
- * @link       https://www.muhammetsafak.com.tr
+ * @author    Muhammet ŞAFAK <info@muhammetsafak.com.tr>
+ * @copyright Copyright © 2022 InitPHP
+ * @license   https://github.com/InitPHP/Translator/blob/main/LICENSE  MIT
+ * @link      https://github.com/InitPHP/Translator
  */
 
 declare(strict_types=1);
 
 namespace InitPHP\Translator;
 
-use function strpos;
-use function explode;
 use function array_shift;
-use function is_array;
-use function is_object;
-use function method_exists;
-use function strtr;
-use function file_exists;
-use function glob;
-use function strtolower;
 use function basename;
-use function is_file;
+use function explode;
+use function glob;
 use function is_dir;
+use function is_file;
+use function method_exists;
 use function rtrim;
+use function str_contains;
+use function strtolower;
+use function strtr;
 
-class Translator implements TranslatorInterface
+use const DIRECTORY_SEPARATOR;
+
+/**
+ * File-based multi-language translator.
+ *
+ * Supports two on-disk layouts (see {@see self::useFile()} /
+ * {@see self::useDirectory()}), dot-delimited nested keys, `{name}` placeholder
+ * interpolation and fallback to a default language. Loaded languages are cached
+ * in memory for the lifetime of the instance.
+ *
+ * @see TranslatorInterface for the documented contract.
+ */
+final class Translator implements TranslatorInterface
 {
+    /**
+     * In-memory cache of loaded languages, keyed by language identifier.
+     *
+     * @var array<string, array<array-key, mixed>>
+     */
+    private array $container = [];
 
-    protected array $container = [];
+    /** Base directory holding the language packs, without a trailing separator. */
+    private ?string $dir = null;
 
-    protected string $dir;
+    /** The default (fallback) language identifier, or null until set. */
+    private ?string $default = null;
 
-    protected string $default;
+    /** The currently active language identifier, or null until set. */
+    private ?string $current = null;
 
-    protected string $current;
+    /** Whether each language is a directory of files (true) or a single file (false). */
+    private bool $languagesAreDirectory = false;
 
-    protected bool $languagesAreDirectory = false;
-
-    public function __construct()
+    /**
+     * Returns a debug-friendly snapshot of the translator state.
+     *
+     * @return array{system: string, default: string|null, current: string|null, container?: array<array-key, mixed>|null}
+     */
+    public function __debugInfo(): array
     {
-    }
-
-    public function __debugInfo()
-    {
-        $deBug = [
-            'system'    => ($this->languagesAreDirectory === FALSE ? 'file' : 'dir'),
-            'default'   => $this->default ?? null,
-            'current'   => $this->current ?? null,
+        $info = [
+            'system'  => $this->languagesAreDirectory ? 'directory' : 'file',
+            'default' => $this->default,
+            'current' => $this->current,
         ];
-        if(isset($this->current)){
-            $deBug['container'] = $this->container[$this->current] ?? null;
+
+        if ($this->current !== null) {
+            $info['container'] = $this->container[$this->current] ?? null;
         }
-        return $deBug;
+
+        return $info;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function setDir(string $dir): self
     {
-        if(!is_dir($dir)){
-            throw new TranslatorException("I couldn't find a directory in the (" . $dir . ") path.");
+        if (!is_dir($dir)) {
+            throw new TranslatorException('The translation directory "' . $dir . '" does not exist.');
         }
+
         $this->dir = rtrim($dir, '/\\');
+
         return $this;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function setDefault(string $default): self
     {
         $this->default = $default;
-        if(!isset($this->container[$default])){
-            $this->load($default);
-        }
-        if(!isset($this->current)){
-            $this->current = $default;
-        }
+        $this->ensureLoaded($default);
+        $this->current ??= $default;
+
         return $this;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function useFile(): self
     {
-        $this->languagesAreDirectory = false;
-        return $this;
+        return $this->setMode(false);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function useDirectory(): self
     {
-        $this->languagesAreDirectory = true;
-        return $this;
+        return $this->setMode(true);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function change(string $current): self
     {
         $this->current = $current;
-        if(!isset($this->container[$current])){
-            $this->load($current);
-        }
-        if(!isset($this->default)){
-            $this->default = $current;
-        }
+        $this->ensureLoaded($current);
+        $this->default ??= $current;
+
         return $this;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function _r(string $key, ?string $default = null, array $context = []): string
+    public function translate(string $key, ?string $fallback = null, array $context = []): string
     {
-        if(($translate = $this->translate($this->current, $key, $context)) !== null){
-            return $translate;
+        if ($this->current !== null) {
+            $value = $this->lookup($this->current, $key, $context);
+            if ($value !== null) {
+                return $value;
+            }
         }
-        if(!empty($default)){
-            return $this->interpolate($default, $context);
+
+        if ($fallback !== null) {
+            return $this->interpolate($fallback, $context);
         }
-        if ($this->default == $this->current) {
-            return $key;
+
+        if ($this->default !== null && $this->default !== $this->current) {
+            $value = $this->lookup($this->default, $key, $context);
+            if ($value !== null) {
+                return $value;
+            }
         }
-        if(($translate = $this->translate($this->default, $key, $context)) !== null){
-            return $translate;
-        }
+
         return $key;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function _e(string $key, ?string $default = null, array $context = []): void
+    public function render(string $key, ?string $fallback = null, array $context = []): void
     {
-        echo $this->_r($key, $default, $context);
+        echo $this->translate($key, $fallback, $context);
     }
 
     /**
-     * @param string $language
-     * @param string $key
-     * @param array $context
-     * @return string|null
+     * {@inheritDoc}
      */
-    private function translate(string $language, string $key, array $context): ?string
+    public function _r(string $key, ?string $fallback = null, array $context = []): string
     {
-        if(!isset($this->container[$language])){
-            return null;
-        }
-        if(strpos($key, '.') !== FALSE){
-            $parse = explode('.', $key);
-            if(($r = ($this->container[$this->current][$parse[0]] ?? null)) === null){
-                return null;
-            }
-            array_shift($parse);
-            foreach ($parse as $subKey) {
-                if(!isset($r[$subKey])){
-                    $r = null;
-                    break;
+        return $this->translate($key, $fallback, $context);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function _e(string $key, ?string $fallback = null, array $context = []): void
+    {
+        $this->render($key, $fallback, $context);
+    }
+
+    /**
+     * Resolves a key within a single language, returning the interpolated value.
+     *
+     * Returns null (a "miss") when the language is not loaded, the key is absent,
+     * or the key resolves to a non-string value (e.g. a nested namespace array).
+     *
+     * @param string $language The language to read from.
+     * @param string $key The translation key (dot-delimited for nested values).
+     * @param array<string, mixed> $context Placeholder values.
+     * @return string|null The interpolated translation, or null on a miss.
+     */
+    private function lookup(string $language, string $key, array $context): ?string
+    {
+        if (str_contains($key, '.')) {
+            $segments = explode('.', $key);
+            $value = $this->container[$language][$segments[0]] ?? null;
+            array_shift($segments);
+
+            foreach ($segments as $segment) {
+                if (!\is_array($value) || !isset($value[$segment])) {
+                    return null;
                 }
-                $r = $r[$subKey];
+                $value = $value[$segment];
             }
-        }else{
-            $r = $this->container[$language][$key] ?? null;
+        } else {
+            $value = $this->container[$language][$key] ?? null;
         }
-        if($r === null){
+
+        if (!\is_string($value)) {
             return null;
         }
-        return $this->interpolate($r, $context);
+
+        return $this->interpolate($value, $context);
     }
 
     /**
-     * @param string $message
-     * @param array $context
-     * @return string
+     * Replaces `{name}` placeholders in a message with values from the context.
+     *
+     * Array values and objects without `__toString()` are skipped; every other
+     * value is cast to a string. Markers without a matching context entry are
+     * left untouched.
+     *
+     * @param string $message The message containing `{name}` markers.
+     * @param array<string, mixed> $context Placeholder values.
+     * @return string The message with placeholders substituted.
      */
-    protected function interpolate(string $message, array $context = []): string
+    private function interpolate(string $message, array $context): string
     {
-        if(empty($context)){
+        if ($context === []) {
             return $message;
         }
+
         $replace = [];
-        foreach ($context as $key => $val) {
-            if (!is_array($val) && (!is_object($val) || method_exists($val, '__toString'))) {
-                $replace['{' . $key . '}'] = $val;
+        foreach ($context as $key => $value) {
+            if (\is_array($value)) {
+                continue;
             }
+            if (\is_object($value) && !method_exists($value, '__toString')) {
+                continue;
+            }
+            /** @var scalar|\Stringable|null $value */
+            $replace['{' . $key . '}'] = (string) $value;
         }
-        return strtr($message, $replace);
+
+        return $replace === [] ? $message : strtr($message, $replace);
     }
 
     /**
-     * @param string $lang
+     * Loads a language into the in-memory cache if it is not already present.
+     *
+     * @param string $lang The language identifier to load.
      * @return void
-     * @throws TranslatorException
+     * @throws TranslatorException If the language pack cannot be loaded.
+     */
+    private function ensureLoaded(string $lang): void
+    {
+        if (!isset($this->container[$lang])) {
+            $this->load($lang);
+        }
+    }
+
+    /**
+     * Sets the file/directory layout mode, guarding against late changes.
+     *
+     * @param bool $asDirectory True for the directory layout, false for the file layout.
+     * @return self
+     * @throws TranslatorException If a language has already been loaded under a different mode.
+     */
+    private function setMode(bool $asDirectory): self
+    {
+        if ($this->container !== [] && $this->languagesAreDirectory !== $asDirectory) {
+            throw new TranslatorException(
+                'The file/directory mode cannot be changed after a language has been loaded. '
+                . 'Call useFile()/useDirectory() before setDefault()/change().'
+            );
+        }
+
+        $this->languagesAreDirectory = $asDirectory;
+
+        return $this;
+    }
+
+    /**
+     * Reads a language pack from disk into the cache.
+     *
+     * In file mode a single `<lang>.php` file is loaded. In directory mode every
+     * `*.php` file inside `<lang>/` is loaded into a namespace keyed by its
+     * lower-cased file name.
+     *
+     * @param string $lang The language identifier to load.
+     * @return void
+     * @throws TranslatorException If the directory is unset, or the file/directory
+     *                             is missing, unreadable or invalid.
      */
     private function load(string $lang): void
     {
+        if ($this->dir === null) {
+            throw new TranslatorException(
+                'The translation directory has not been set. Call setDir() before loading a language.'
+            );
+        }
+
         $path = $this->dir . DIRECTORY_SEPARATOR . $lang
             . ($this->languagesAreDirectory ? DIRECTORY_SEPARATOR : '.php');
-        if(!file_exists($path)){
-            throw new TranslatorException('The file or directory could not be found. "' . $path . '"');
-        }
-        if($this->languagesAreDirectory === FALSE){
+
+        if (!$this->languagesAreDirectory) {
             $this->container[$lang] = $this->requireFile($path);
+
             return;
         }
-        if(($files = glob($path . '*.php')) === FALSE){
-            throw new TranslatorException('The directory could not be read or does not contain a suitable file. "' . $path . '"');
+
+        if (!is_dir($path)) {
+            throw new TranslatorException('The translation directory was not found: "' . $path . '".');
         }
+
+        $files = glob($path . '*.php');
+        if ($files === false) {
+            throw new TranslatorException('The translation directory could not be read: "' . $path . '".');
+        }
+
+        $this->container[$lang] = [];
         foreach ($files as $file) {
-            $name = strtolower(basename($file, '.php'));
-            $this->container[$lang][$name] = $this->requireFile($file);
+            $namespace = strtolower(basename($file, '.php'));
+            $this->container[$lang][$namespace] = $this->requireFile($file);
         }
     }
 
     /**
-     * @param string $path
-     * @return array
-     * @throws TranslatorException
+     * Requires a PHP file and asserts that it returns an array.
+     *
+     * @param string $path Absolute path to the language file.
+     * @return array<array-key, mixed> The array returned by the file.
+     * @throws TranslatorException If the file is missing or does not return an array.
      */
     private function requireFile(string $path): array
     {
-        if(!is_file($path)){
-            throw new TranslatorException('The requested file was not found. "' . $path . '"');
+        if (!is_file($path)) {
+            throw new TranslatorException('The translation file was not found: "' . $path . '".');
         }
-        return require $path;
-    }
 
+        /** @var mixed $data */
+        $data = require $path;
+        if (!\is_array($data)) {
+            throw new TranslatorException('The translation file "' . $path . '" must return an array.');
+        }
+
+        return $data;
+    }
 }

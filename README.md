@@ -1,197 +1,199 @@
 # InitPHP Translator
 
-This library; It is a micro library that will allow you to add multi-language support to your projects or libraries.
+A micro multi-language (i18n) translation library for PHP. Load language packs
+from plain PHP files, look up keys (including dot-delimited nested keys),
+interpolate `{name}` placeholders, and fall back to a default language when a
+translation is missing.
 
-[![Latest Stable Version](http://poser.pugx.org/initphp/translator/v)](https://packagist.org/packages/initphp/translator) [![Total Downloads](http://poser.pugx.org/initphp/translator/downloads)](https://packagist.org/packages/initphp/translator) [![Latest Unstable Version](http://poser.pugx.org/initphp/translator/v/unstable)](https://packagist.org/packages/initphp/translator) [![License](http://poser.pugx.org/initphp/translator/license)](https://packagist.org/packages/initphp/translator) [![PHP Version Require](http://poser.pugx.org/initphp/translator/require/php)](https://packagist.org/packages/initphp/translator)
+[![Latest Stable Version](http://poser.pugx.org/initphp/translator/v)](https://packagist.org/packages/initphp/translator)
+[![Total Downloads](http://poser.pugx.org/initphp/translator/downloads)](https://packagist.org/packages/initphp/translator)
+[![License](http://poser.pugx.org/initphp/translator/license)](https://packagist.org/packages/initphp/translator)
+[![PHP Version Require](http://poser.pugx.org/initphp/translator/require/php)](https://packagist.org/packages/initphp/translator)
+
+## Features
+
+- Two on-disk layouts: **one file per language**, or **one directory per language**.
+- **Nested keys** via dot notation (`admin.dashboard`, `errors.http.404`).
+- **Placeholder interpolation** (`Welcome {user}`) from a context map.
+- **Fallback chain**: active language → inline fallback → default language → the key itself.
+- No runtime dependencies. Loaded languages are cached in memory.
 
 ## Requirements
 
-- PHP 7.4 or higher
+- PHP 8.1 or higher
 
 ## Installation
 
-```
+```bash
 composer require initphp/translator
 ```
 
-## Usage
+## Quick start
 
 ```php
-require_once "vendor/autoload.php";
-use \InitPHP\Translator\Translator;
+require_once 'vendor/autoload.php';
+
+use InitPHP\Translator\Translator;
 
 $lang = new Translator();
 $lang->setDir(__DIR__ . '/languages/')
     ->setDefault('en');
 
-$lang->change('tr'); // Set Current Language
+$lang->change('tr'); // switch the active language
 
-echo $lang->_r('hello');
+echo $lang->translate('hello');
 ```
 
-What does a language file look like?
+A language file simply returns an array:
 
 ```php
 <?php
+// languages/en.php
 return [
-    'hello'     => 'Hello {user}',
-    'today'     => 'It\'s {day}',
+    'hello'   => 'Hello {user}',
+    'today'   => "It's {day}",
 ];
 ```
 
-### File? Directory?
+```php
+echo $lang->translate('hello', null, ['user' => 'Ada']); // "Hello Ada"
+```
 
-You can use a single file for each language or multiple files under a directory. 
+## File layout vs. directory layout
 
-#### Use File
+Choose how your language packs are stored. **Pick the mode before loading a
+language** (i.e. before `setDefault()` / `change()`); the default is file mode.
 
-If you are going to use a single file for a language; Your directory structure will look something like this;
+### File mode — one file per language
 
 ```
-/languages/
+languages/
     en.php
     tr.php
     fr.php
 ```
 
-Your code looks like the following;
-
 ```php
-require_once "vendor/autoload.php";
-use \InitPHP\Translator\Translator;
-
-$lang = new Translator;
-$lang->useFile(); // Note that it is used first of all.
-$lang->setDir(__DIR__ . '/languages/')
+$lang = new Translator();
+$lang->useFile() // optional; this is the default
+    ->setDir(__DIR__ . '/languages/')
     ->setDefault('en');
 
-echo $lang->_r('hello');
+echo $lang->translate('hello');
 ```
 
-#### Use Directory
+### Directory mode — one directory per language
 
-If you want to use directories that contain multiple files for each language, your directory structure will be something like this;
+Each `*.php` file becomes a namespace keyed by its (lower-cased) file name, and
+keys are addressed as `filename.key`:
 
 ```
-/languages/
+languages/
     en/
         user.php
         admin.php
-        profile.php
     tr/
         user.php
         admin.php
-        profile.php
 ```
 
-Your code looks like the following;
-
 ```php
-require_once "vendor/autoload.php";
-use \InitPHP\Translator\Translator;
-
-$lang = new Translator;
-$lang->useDirectory(); // Note that it is used first of all.
-$lang->setDir(__DIR__ . '/languages/')
+$lang = new Translator();
+$lang->useDirectory() // note: call before setDefault()/change()
+    ->setDir(__DIR__ . '/languages/')
     ->setDefault('en');
 
-// The filename and keyname are separated by dots.
-// Example : "filename.key"
-echo $lang->_r('user.hello');
+echo $lang->translate('user.hello');   // user.php => ['hello' => '...']
+echo $lang->translate('admin.dashboard');
 ```
 
-### Methods
+## How a key is resolved
 
-#### `setDir()`
+`translate()` resolves a key in this order and returns the first hit:
 
-Defines the full path to the parent directory where the language files are kept.
-
-**Structure :**
+1. The **active** language (set by `setDefault()` or `change()`).
+2. The **inline fallback** string, if you passed one (it is interpolated too).
+3. The **default** language, when it differs from the active one.
+4. The **key itself**, returned verbatim, if nothing matched.
 
 ```php
-public function setDir(string $dir): self
+$lang->setDefault('en')->change('tr');
+
+$lang->translate('errors.e404');                 // tr → (missing) → en → "Not Found"
+$lang->translate('greeting', 'Hi {user}', [      // tr missing → inline fallback
+    'user' => 'Ada',
+]);                                              // "Hi Ada"
+$lang->translate('unknown.key');                 // nowhere → "unknown.key"
 ```
 
-#### `setDefault()`
+> Note: a key that points to a nested array (a namespace) rather than a string
+> is treated as a miss and falls through the chain — it never throws.
 
-Defines the main translation language to be used by default if the desired translation in the current language is not found.
+## Placeholders
 
-**Structure :**
+Markers are written `{name}` and replaced from the context map. Scalar values
+and objects implementing `__toString()` are stringified; arrays and other
+objects are ignored, and unmatched markers are left untouched.
 
 ```php
-public function setDefault(string $default): self
+$lang->translate('errorMsg', null, ['code' => 2005]);
+// "Something went wrong. Code : 2005"
 ```
 
-_Note :_ If a text is given by default during use; this library uses the default string you provided at the time of use.
+## Methods
 
-#### `useFile()` and `useDirectory()`
+| Method | Description |
+| ------ | ----------- |
+| `setDir(string $dir): self` | Sets the base directory of the language packs. Trailing slashes are trimmed. Throws if the path is not a directory. |
+| `useFile(): self` | Selects file mode (default). Call before loading a language. |
+| `useDirectory(): self` | Selects directory mode. Call before loading a language. |
+| `setDefault(string $default): self` | Sets and loads the default (fallback) language; becomes the active one if none is set. |
+| `change(string $current): self` | Switches the active language, loading it on first use. |
+| `translate(string $key, ?string $fallback = null, array $context = []): string` | Returns the resolved, interpolated translation. |
+| `render(string $key, ?string $fallback = null, array $context = []): void` | Echoes the value of `translate()`. |
+| `_r(...)` | **Deprecated** alias of `translate()`, kept for backward compatibility. |
+| `_e(...)` | **Deprecated** alias of `render()`, kept for backward compatibility. |
 
-These two methods; tells you whether to use a single php file or a directory for localization. [See "File? Directory?" above for more.](#file-directory)
+All configuration methods return `$this`, so calls can be chained.
 
-_Note :_ If not specified, the file system is used by default.
+## Documentation
 
-**Structures :**
+Full guides with examples live in [`docs/`](docs/README.md):
 
-```php
-public function useFile(): self;
+- [Getting started](docs/getting-started.md)
+- [File mode](docs/usage/file-mode.md) · [Directory mode](docs/usage/directory-mode.md)
+- [Key resolution & fallback](docs/key-resolution-and-fallback.md)
+- [Placeholders](docs/placeholders.md)
+- [API reference](docs/api-reference.md)
+- [Exceptions](docs/exceptions.md)
 
-public function useDirectory(): self;
-```
+## Getting help
 
-#### `change()`
-
-Changes the current language and loads the desired language if it is not already installed.
-
-**Structure :**
-
-```php
-public function change(string $current): self
-```
-
-#### `_r()`
-
-Returns the desired translation value.
-
-**Structure :**
-
-```php
-public function _r(string $key, ?string $default = null, array $context = []): string
-```
-
-- `$key` : The key to the desired translation.
-- `$default` : The string to substitute if the requested translation is not found.
-- `$context` : An associative array that reports the value of placeholders, if any, in the translation.
-
-#### `_e()`
-
-Outputs the desired value directly.
-
-- `$lang->_e('hello')` = `echo $lang->_r('hello')`
-
-**Structure :**
-
-```php
-public function _e(string $key, ?string $default = null, array $context = []): void
-```
-
-## Getting Help
-
-If you have questions, concerns, bug reports, etc, please file an issue in this repository's Issue Tracker.
+If you have questions, bug reports, or feature requests, please open an issue in
+the [issue tracker](https://github.com/InitPHP/Translator/issues).
 
 ## Contributing
 
-> All contributions to this project will be published under the MIT License. By submitting a pull request or filing a bug, issue, or feature request, you are agreeing to comply with this waiver of copyright interest.
+> All contributions to this project will be published under the MIT License. By
+> submitting a pull request or filing a bug, issue, or feature request, you are
+> agreeing to comply with this waiver of copyright interest.
 
-- Fork it ( https://github.com/initphp/translator/fork )
-- Create your feature branch (`git checkout -b my-new-feature`)
-- Commit your changes (`git commit -am "Add some feature"`)
-- Push to the branch (`git push origin my-new-feature`)
+Before opening a pull request, run the full local check bundle:
+
+```bash
+composer ci   # cs-check + stan + test
+```
+
+- Fork it ( https://github.com/InitPHP/Translator/fork )
+- Create your feature branch (`git checkout -b feat/my-feature`)
+- Commit your changes (`git commit -am 'Add some feature'`)
+- Push to the branch (`git push origin feat/my-feature`)
 - Create a new Pull Request
 
 ## Credits
 
-- [Muhammet ŞAFAK](https://www.muhammetsafak.com.tr) <<info@muhammetsafak.com.tr>>
+- [Muhammet ŞAFAK](https://www.muhammetsafak.com.tr) &lt;<info@muhammetsafak.com.tr>&gt;
 
 ## License
 
-Copyright &copy; 2022 [MIT License](./LICENSE)
+Copyright &copy; 2022 InitPHP — released under the [MIT License](./LICENSE).

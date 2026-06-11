@@ -1,8 +1,41 @@
 {
     "name": "initphp/translator",
-    "description": "This library; It is a micro library that will allow you to add multi-language support to your projects or libraries.",
+    "description": "Micro multi-language (i18n) translation library for PHP with file or directory based language packs, dot-delimited nested keys, placeholder interpolation and default-language fallback.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "translator",
+        "translation",
+        "i18n",
+        "l10n",
+        "localization",
+        "internationalization",
+        "language",
+        "multilingual",
+        "initphp",
+        "php"
+    ],
+    "authors": [
+        {
+            "name": "Muhammet ŞAFAK",
+            "email": "info@muhammetsafak.com.tr",
+            "role": "Developer",
+            "homepage": "https://www.muhammetsafak.com.tr"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/InitPHP/Translator/issues",
+        "source": "https://github.com/InitPHP/Translator",
+        "docs": "https://github.com/InitPHP/Translator/tree/main/docs"
+    },
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "phpstan/phpstan": "^1.12 || ^2.1",
+        "friendsofphp/php-cs-fixer": "^3.65"
+    },
     "autoload": {
         "psr-4": {
             "InitPHP\\Translator\\": "src/"
@@ -13,19 +46,34 @@
             "Tests\\InitPHP\\Translator\\": "tests/"
         }
     },
-    "authors": [
-        {
-            "name": "Muhammet ŞAFAK",
-            "email": "info@muhammetsafak.com.tr",
-            "homepage": "https://www.muhammetsafak.com.tr",
-            "role": "Developer"
-        }
-    ],
-    "minimum-stability": "stable",
-    "require": {
-        "php": ">=7.4"
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html build/coverage",
+        "stan": "phpstan analyse --no-progress",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "ci": [
+            "@cs-check",
+            "@stan",
+            "@test"
+        ]
     },
-    "require-dev": {
-        "phpunit/phpunit": "9.5"
+    "scripts-descriptions": {
+        "test": "Run the PHPUnit test suite.",
+        "test-coverage": "Run PHPUnit and produce an HTML coverage report under build/coverage.",
+        "stan": "Run PHPStan at the level configured in phpstan.neon.dist.",
+        "cs-check": "Report any PHP-CS-Fixer violations without modifying files.",
+        "cs-fix": "Apply PHP-CS-Fixer fixes in-place.",
+        "ci": "Run the full CI bundle locally: cs-check, stan, test."
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
+        }
     }
 }
