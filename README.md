@@ -5,7 +5,7 @@ from plain PHP files, look up keys (including dot-delimited nested keys),
 interpolate `{name}` placeholders, and fall back to a default language when a
 translation is missing.
 
-[![Designed & Maintained with Tan](https://www.muhammetsafak.com.tr/badges/designed-maintained-with-tan.svg)](https://www.muhammetsafak.com.tr/en/tan/)
+[![Designed & Maintained with Tan](https://muhammetsafak.com/badges/designed-maintained-with-tan.svg)](https://muhammetsafak.com/tan/)
 [![Latest Stable Version](http://poser.pugx.org/initphp/translator/v)](https://packagist.org/packages/initphp/translator)
 [![Total Downloads](http://poser.pugx.org/initphp/translator/downloads)](https://packagist.org/packages/initphp/translator)
 [![License](http://poser.pugx.org/initphp/translator/license)](https://packagist.org/packages/initphp/translator)
@@ -193,7 +193,7 @@ composer ci   # cs-check + stan + test
 
 ## Credits
 
-- [Muhammet ŞAFAK](https://www.muhammetsafak.com.tr) &lt;<info@muhammetsafak.com.tr>&gt;
+- [Muhammet ŞAFAK](https://muhammetsafak.com) &lt;<info@muhammetsafak.com>&gt;
 
 ## License
 
