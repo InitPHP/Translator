@@ -1,5 +1,12 @@
 # Change Log
 
+## [Unreleased]
+
+### Changed (breaking)
+
+- **Requires PHP `^8.2`.** Support for PHP 8.1 is dropped; CI now runs PHP 8.2, 8.3, 8.4 and 8.5.
+- **Coding standard moved to PER-CS** through the shared `.php-cs-fixer.dist.php`; the whole code base was reformatted.
+
 ## 1.0.0 [2026.06.11]
 
 First stable release. The public API of the previous `0.2` line — `_r()` /

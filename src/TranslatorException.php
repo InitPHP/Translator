@@ -26,6 +26,4 @@ use Exception;
  * - a requested language file or directory cannot be found or read;
  * - a language file does not `return` an array.
  */
-class TranslatorException extends Exception
-{
-}
+class TranslatorException extends Exception {}
