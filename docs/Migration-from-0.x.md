@@ -6,7 +6,7 @@ modernizing the package. This page lists what changed and what (little) you may
 want to update.
 
 > This page describes the 0.x to 1.0 changes, where the PHP floor became 8.1.
-> The development line after 1.0.0 raises it again to PHP 8.2 (see the
+> Version 2.0.0 raises it again to PHP 8.2 (see the
 > [CHANGELOG](https://github.com/InitPHP/Translator/blob/main/CHANGELOG.md)),
 > so check [Installation](Installation.md) for the current requirement.
 
@@ -111,8 +111,8 @@ A language file that does not `return` an array now throws a clear
 
 ## Upgrade checklist
 
-1. Ensure your runtime/CI is on **PHP 8.1+**.
-2. `composer require initphp/translator:^1.0`.
+1. Ensure your runtime/CI is on **PHP 8.2+** (8.1+ on 1.x).
+2. `composer require initphp/translator:^2.0`.
 3. Run your test suite. The bug fixes above are the only behavioral changes.
 4. (Optional) Replace `_r()` → `translate()` and `_e()` → `render()` for clarity.
 5. (Optional) If you subclassed `Translator`, refactor to compose around
