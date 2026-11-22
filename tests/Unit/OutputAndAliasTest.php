@@ -43,7 +43,7 @@ final class OutputAndAliasTest extends TestCase
     {
         self::assertSame(
             $this->lang->translate('welcome', null, ['user' => 'Ada']),
-            $this->lang->_r('welcome', null, ['user' => 'Ada'])
+            $this->lang->_r('welcome', null, ['user' => 'Ada']),
         );
     }
 

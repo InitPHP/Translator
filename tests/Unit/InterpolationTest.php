@@ -51,7 +51,7 @@ final class InterpolationTest extends TestCase
 
     public function testStringablePlaceholderIsStringified(): void
     {
-        $money = new class () implements Stringable {
+        $money = new class implements Stringable {
             public function __toString(): string
             {
                 return '€9.99';

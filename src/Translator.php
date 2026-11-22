@@ -275,7 +275,7 @@ final class Translator implements TranslatorInterface
         if ($this->container !== [] && $this->languagesAreDirectory !== $asDirectory) {
             throw new TranslatorException(
                 'The file/directory mode cannot be changed after a language has been loaded. '
-                . 'Call useFile()/useDirectory() before setDefault()/change().'
+                . 'Call useFile()/useDirectory() before setDefault()/change().',
             );
         }
 
@@ -300,7 +300,7 @@ final class Translator implements TranslatorInterface
     {
         if ($this->dir === null) {
             throw new TranslatorException(
-                'The translation directory has not been set. Call setDir() before loading a language.'
+                'The translation directory has not been set. Call setDir() before loading a language.',
             );
         }
 
