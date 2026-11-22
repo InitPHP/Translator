@@ -159,14 +159,14 @@ All configuration methods return `$this`, so calls can be chained.
 
 ## Documentation
 
-Full guides with examples live in [`docs/`](docs/README.md):
+Full guides with examples live in [`docs/`](docs/Home.md):
 
-- [Getting started](docs/getting-started.md)
-- [File mode](docs/usage/file-mode.md) · [Directory mode](docs/usage/directory-mode.md)
-- [Key resolution & fallback](docs/key-resolution-and-fallback.md)
-- [Placeholders](docs/placeholders.md)
-- [API reference](docs/api-reference.md)
-- [Exceptions](docs/exceptions.md)
+- [Quick start](docs/Quick-Start.md)
+- [File mode](docs/File-Mode.md) · [Directory mode](docs/Directory-Mode.md)
+- [Keys & fallback](docs/Keys-and-Fallback.md)
+- [Placeholders](docs/Placeholders.md)
+- [API reference](docs/API-Reference.md)
+- [Exceptions](docs/Exceptions.md)
 
 ## Getting help
 
