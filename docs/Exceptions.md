@@ -67,9 +67,18 @@ try {
 }
 ```
 
-If you accept a language identifier from user input, validate it against a known
-list **before** calling `change()`, so an unknown value falls back to a default
-rather than throwing on a missing pack:
+## Validate user-supplied language codes
+
+`setDefault()` and `change()` do **not** validate the identifier. It is appended
+to the directory you gave `setDir()` (`<dir>/<identifier>.php` in file mode,
+`<dir>/<identifier>/*.php` in directory mode) and the result is `require`d. A
+value such as `../config/install` therefore reaches PHP files outside the
+language directory and runs them. A harmless unknown value only throws a
+`TranslatorException`; a crafted one can execute code.
+
+If you accept a language identifier from user input (query string, cookie,
+header, form field), validate it against a known list **before** calling
+`change()` or `setDefault()`, so an unknown value falls back to a default:
 
 ```php
 $supported = ['en', 'tr', 'fr'];

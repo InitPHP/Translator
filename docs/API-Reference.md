@@ -94,7 +94,9 @@ Sets and **eagerly loads** the default (fallback) language. If no active languag
 has been chosen yet, this language also becomes the active one.
 
 - **`$default`** — language identifier (a file name without extension in file
-  mode, or a sub-directory name in directory mode).
+  mode, or a sub-directory name in directory mode). It is joined into a path and
+  the file is `require`d without any validation, so pass only values you
+  control — see [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
 - **Throws** [`TranslatorException`](Exceptions.md) if the directory is unset, or
   the language pack is missing, unreadable, or does not return an array.
 
@@ -113,7 +115,10 @@ public function change(string $current): self;
 Switches the active language, loading it on first use. If no default language has
 been set yet, the given language also becomes the default.
 
-- **`$current`** — language identifier to activate.
+- **`$current`** — language identifier to activate. Like `setDefault()`, it is
+  joined into a path and the file is `require`d without any validation. Never
+  pass request input directly; check it against an allow-list first — see
+  [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
 - **Throws** [`TranslatorException`](Exceptions.md) under the same conditions as
   [`setDefault()`](#setdefault).
 

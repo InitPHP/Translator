@@ -114,8 +114,12 @@ $lang = new Translator();
 $lang->setDir(__DIR__ . '/languages/')
     ->setDefault('en');
 
-// Per request, choose a language (with a safe default):
-$lang->change($_GET['lang'] ?? 'en');
+// Per request, choose a language. The identifier becomes part of a file path,
+// so only ever pass a value from your own allow-list:
+$supported = ['en', 'tr', 'fr'];
+$requested = $_GET['lang'] ?? 'en';
+
+$lang->change(in_array($requested, $supported, true) ? $requested : 'en');
 
 echo $lang->translate('welcome', 'Welcome {user}', [
     'user' => 'Ada',
@@ -124,6 +128,9 @@ echo $lang->translate('welcome', 'Welcome {user}', [
 
 ## Common mistakes
 
+- **Passing request input straight to `change()`.** The identifier is joined
+  into a path and the file is `require`d, and nothing checks it — see
+  [Exceptions](Exceptions.md#validate-user-supplied-language-codes).
 - **Setting the layout mode too late.** Calling `useDirectory()` after a language
   has loaded throws. Set the mode first — see [Troubleshooting](Troubleshooting.md).
 - **Expecting a missing key to throw.** It does not; it returns the key (or your
