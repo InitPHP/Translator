@@ -20,6 +20,7 @@ use function glob;
 use function is_dir;
 use function is_file;
 use function method_exists;
+use function preg_match;
 use function rtrim;
 use function str_contains;
 use function strtolower;
@@ -97,8 +98,11 @@ final class Translator implements TranslatorInterface
      */
     public function setDefault(string $default): self
     {
-        $this->default = $default;
+        $this->assertValidLanguageCode($default);
+
+        // Load first: if the pack cannot be loaded, nothing has been changed.
         $this->ensureLoaded($default);
+        $this->default = $default;
         $this->current ??= $default;
 
         return $this;
@@ -125,8 +129,11 @@ final class Translator implements TranslatorInterface
      */
     public function change(string $current): self
     {
-        $this->current = $current;
+        $this->assertValidLanguageCode($current);
+
+        // Load first: if the pack cannot be loaded, nothing has been changed.
         $this->ensureLoaded($current);
+        $this->current = $current;
         $this->default ??= $current;
 
         return $this;
@@ -250,6 +257,26 @@ final class Translator implements TranslatorInterface
     }
 
     /**
+     * Rejects a language identifier that could escape the language directory.
+     *
+     * The identifier is joined into a path that is then `require`d, so only
+     * letters, digits, `_` and `-` are accepted. `\z` (not `$`) keeps a trailing
+     * newline from slipping through.
+     *
+     * @param string $lang The language identifier to check.
+     * @return void
+     * @throws TranslatorException If the identifier contains any other character, or is empty.
+     */
+    private function assertValidLanguageCode(string $lang): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $lang) !== 1) {
+            throw new TranslatorException(
+                'The language code is invalid. Only letters, digits, "_" and "-" are allowed.',
+            );
+        }
+    }
+
+    /**
      * Loads a language into the in-memory cache if it is not already present.
      *
      * @param string $lang The language identifier to load.
@@ -322,11 +349,15 @@ final class Translator implements TranslatorInterface
             throw new TranslatorException('The translation directory could not be read: "' . $path . '".');
         }
 
-        $this->container[$lang] = [];
+        // Collected locally and cached only once every file has loaded, so a
+        // broken file cannot leave a half-loaded language that a later call
+        // would accept from the cache.
+        $loaded = [];
         foreach ($files as $file) {
             $namespace = strtolower(basename($file, '.php'));
-            $this->container[$lang][$namespace] = $this->requireFile($file);
+            $loaded[$namespace] = $this->requireFile($file);
         }
+        $this->container[$lang] = $loaded;
     }
 
     /**

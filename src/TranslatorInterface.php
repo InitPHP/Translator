@@ -50,8 +50,11 @@ interface TranslatorInterface
      *                        extension in file mode, or a sub-directory name in
      *                        directory mode).
      * @return TranslatorInterface The same instance, for chaining.
-     * @throws TranslatorException If the directory is not set, or the language
-     *                             pack cannot be found, read or does not return an array.
+     * @throws TranslatorException If the identifier is empty or contains anything
+     *                             other than letters, digits, `_` and `-`, the
+     *                             directory is not set, or the language pack cannot
+     *                             be found, read or does not return an array. The
+     *                             translator keeps its previous state on failure.
      */
     public function setDefault(string $default): TranslatorInterface;
 
@@ -88,8 +91,11 @@ interface TranslatorInterface
      *
      * @param string $current Language identifier to activate.
      * @return TranslatorInterface The same instance, for chaining.
-     * @throws TranslatorException If the directory is not set, or the language
-     *                             pack cannot be found, read or does not return an array.
+     * @throws TranslatorException If the identifier is empty or contains anything
+     *                             other than letters, digits, `_` and `-`, the
+     *                             directory is not set, or the language pack cannot
+     *                             be found, read or does not return an array. The
+     *                             translator keeps its previous state on failure.
      */
     public function change(string $current): TranslatorInterface;
 

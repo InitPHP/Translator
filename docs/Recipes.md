@@ -45,8 +45,9 @@ te('hello'); // echoes
 ## Pick the language per request
 
 Resolve the active language from the request, always validating against a known
-list. `change()` does not check its argument and builds a file path from it, so
-an unvalidated value can load files outside your language directory (see
+list. `change()` builds a file path from its argument: characters outside
+`[A-Za-z0-9_-]` throw, and an unsupported code throws a file-not-found error, so
+an unvalidated value breaks the request instead of falling back (see
 [Exceptions](Exceptions.md#validate-user-supplied-language-codes)):
 
 ```php
