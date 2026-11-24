@@ -99,9 +99,9 @@ has been chosen yet, this language also becomes the active one.
   validate request input against an allow-list anyway — see
   [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
 - **Throws** [`TranslatorException`](Exceptions.md) if the identifier is empty or
-  contains any other character (nothing is loaded and the state is unchanged), if
-  the directory is unset, or the language pack is missing, unreadable, or does not
-  return an array.
+  contains any other character, if the directory is unset, or the language pack
+  is missing, unreadable, or does not return an array. On any of these the
+  translator keeps its previous state (see [Exceptions](Exceptions.md)).
 
 ```php
 $lang->setDefault('en');

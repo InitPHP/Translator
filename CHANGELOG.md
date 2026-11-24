@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unchanged when a code is rejected. Codes such as `en`, `en_US` and `pt-BR` keep
   working; a language pack whose name used `.` or `/` must be renamed.
 
+### Fixed
+
+- `setDefault()` and `change()` no longer change the active or default language
+  when the language cannot be loaded (missing file or directory, a file that does
+  not return an array): the pack is loaded first and the state is assigned after.
+  Before, `change('xx')` left `xx` as the active language.
+- In directory mode a language is cached only after all of its files have
+  loaded. Before, a broken file left a half-loaded language in the cache, and
+  the next `change()` to it succeeded silently with the missing namespaces.
+
 ## [2.0.0] - 2026-11-22
 
 ### Changed (breaking)

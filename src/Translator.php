@@ -100,8 +100,9 @@ final class Translator implements TranslatorInterface
     {
         $this->assertValidLanguageCode($default);
 
-        $this->default = $default;
+        // Load first: if the pack cannot be loaded, nothing has been changed.
         $this->ensureLoaded($default);
+        $this->default = $default;
         $this->current ??= $default;
 
         return $this;
@@ -130,8 +131,9 @@ final class Translator implements TranslatorInterface
     {
         $this->assertValidLanguageCode($current);
 
-        $this->current = $current;
+        // Load first: if the pack cannot be loaded, nothing has been changed.
         $this->ensureLoaded($current);
+        $this->current = $current;
         $this->default ??= $current;
 
         return $this;
@@ -347,11 +349,15 @@ final class Translator implements TranslatorInterface
             throw new TranslatorException('The translation directory could not be read: "' . $path . '".');
         }
 
-        $this->container[$lang] = [];
+        // Collected locally and cached only once every file has loaded, so a
+        // broken file cannot leave a half-loaded language that a later call
+        // would accept from the cache.
+        $loaded = [];
         foreach ($files as $file) {
             $namespace = strtolower(basename($file, '.php'));
-            $this->container[$lang][$namespace] = $this->requireFile($file);
+            $loaded[$namespace] = $this->requireFile($file);
         }
+        $this->container[$lang] = $loaded;
     }
 
     /**

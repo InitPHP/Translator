@@ -27,6 +27,13 @@ class TranslatorException extends \Exception {}
 
 Every message names the offending path or condition.
 
+When `setDefault()` or `change()` throws — an invalid code, a missing or unreadable
+pack, a file that does not return an array — the translator is left exactly as it
+was: the active and default languages are unchanged, and nothing is cached for
+the language that failed. In directory mode a language is cached only after every
+file in it has loaded, so retrying a broken language throws again instead of
+silently using the part that loaded.
+
 ## What does *not* throw
 
 These are handled gracefully and never raise an exception:
@@ -76,7 +83,7 @@ you gave `setDir()` (`<dir>/<identifier>.php` in file mode,
 `<dir>/<identifier>/*.php` in directory mode) and the result is `require`d, so
 anything else — `../config/install`, a `/`, a `.`, a trailing newline, a NUL
 byte, an empty string — is rejected with a `TranslatorException` **before** any
-file is touched. The translator keeps its previous state when it rejects a code.
+file is touched.
 
 The check only keeps the lookup inside the language directory. It does not know
 which languages you support: a well-formed code such as `xx` still throws
