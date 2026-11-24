@@ -20,6 +20,7 @@ use function glob;
 use function is_dir;
 use function is_file;
 use function method_exists;
+use function preg_match;
 use function rtrim;
 use function str_contains;
 use function strtolower;
@@ -97,6 +98,8 @@ final class Translator implements TranslatorInterface
      */
     public function setDefault(string $default): self
     {
+        $this->assertValidLanguageCode($default);
+
         $this->default = $default;
         $this->ensureLoaded($default);
         $this->current ??= $default;
@@ -125,6 +128,8 @@ final class Translator implements TranslatorInterface
      */
     public function change(string $current): self
     {
+        $this->assertValidLanguageCode($current);
+
         $this->current = $current;
         $this->ensureLoaded($current);
         $this->default ??= $current;
@@ -247,6 +252,26 @@ final class Translator implements TranslatorInterface
         }
 
         return $replace === [] ? $message : strtr($message, $replace);
+    }
+
+    /**
+     * Rejects a language identifier that could escape the language directory.
+     *
+     * The identifier is joined into a path that is then `require`d, so only
+     * letters, digits, `_` and `-` are accepted. `\z` (not `$`) keeps a trailing
+     * newline from slipping through.
+     *
+     * @param string $lang The language identifier to check.
+     * @return void
+     * @throws TranslatorException If the identifier contains any other character, or is empty.
+     */
+    private function assertValidLanguageCode(string $lang): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $lang) !== 1) {
+            throw new TranslatorException(
+                'The language code is invalid. Only letters, digits, "_" and "-" are allowed.',
+            );
+        }
     }
 
     /**

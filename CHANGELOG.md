@@ -5,6 +5,19 @@ All notable changes to **initphp/translator** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- `setDefault()` and `change()` now reject a language identifier that is empty or
+  contains anything other than letters, digits, `_` and `-` (checked with `\A…\z`,
+  so a trailing newline is rejected too) by throwing `TranslatorException` before
+  any file is read. Previously the identifier was joined into the path of a file
+  that was `require`d, so a request-supplied value such as `../config/install`
+  could run PHP files outside the language directory. The translator's state is
+  unchanged when a code is rejected. Codes such as `en`, `en_US` and `pt-BR` keep
+  working; a language pack whose name used `.` or `/` must be renamed.
+
 ## [2.0.0] - 2026-11-22
 
 ### Changed (breaking)

@@ -95,10 +95,13 @@ has been chosen yet, this language also becomes the active one.
 
 - **`$default`** — language identifier (a file name without extension in file
   mode, or a sub-directory name in directory mode). It is joined into a path and
-  the file is `require`d without any validation, so pass only values you
-  control — see [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
-- **Throws** [`TranslatorException`](Exceptions.md) if the directory is unset, or
-  the language pack is missing, unreadable, or does not return an array.
+  the file is `require`d, so only letters, digits, `_` and `-` are accepted;
+  validate request input against an allow-list anyway — see
+  [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
+- **Throws** [`TranslatorException`](Exceptions.md) if the identifier is empty or
+  contains any other character (nothing is loaded and the state is unchanged), if
+  the directory is unset, or the language pack is missing, unreadable, or does not
+  return an array.
 
 ```php
 $lang->setDefault('en');
@@ -116,8 +119,9 @@ Switches the active language, loading it on first use. If no default language ha
 been set yet, the given language also becomes the default.
 
 - **`$current`** — language identifier to activate. Like `setDefault()`, it is
-  joined into a path and the file is `require`d without any validation. Never
-  pass request input directly; check it against an allow-list first — see
+  joined into a path and the file is `require`d, so only letters, digits, `_` and
+  `-` are accepted. Do not pass request input directly; check it against an
+  allow-list first — see
   [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
 - **Throws** [`TranslatorException`](Exceptions.md) under the same conditions as
   [`setDefault()`](#setdefault).

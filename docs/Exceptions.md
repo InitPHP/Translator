@@ -22,6 +22,7 @@ class TranslatorException extends \Exception {}
 | A language **file** is missing (file mode) | `setDefault()` / `change()` | `The translation file was not found: "/app/languages/de.php".` |
 | A language **directory** is missing (directory mode) | `setDefault()` / `change()` | `The translation directory was not found: "/app/languages/de/".` |
 | A directory could not be read | `setDefault()` / `change()` | `The translation directory could not be read: "...".` |
+| The language identifier contains anything other than letters, digits, `_` and `-` (or is empty) | `setDefault()` / `change()` | `The language code is invalid. Only letters, digits, "_" and "-" are allowed.` |
 | A language file does not `return` an array | `setDefault()` / `change()` | `The translation file "/app/languages/en.php" must return an array.` |
 
 Every message names the offending path or condition.
@@ -69,16 +70,21 @@ try {
 
 ## Validate user-supplied language codes
 
-`setDefault()` and `change()` do **not** validate the identifier. It is appended
-to the directory you gave `setDir()` (`<dir>/<identifier>.php` in file mode,
-`<dir>/<identifier>/*.php` in directory mode) and the result is `require`d. A
-value such as `../config/install` therefore reaches PHP files outside the
-language directory and runs them. A harmless unknown value only throws a
-`TranslatorException`; a crafted one can execute code.
+`setDefault()` and `change()` only accept identifiers made of letters, digits,
+`_` and `-` (`en`, `en_US`, `pt-BR`). The identifier is appended to the directory
+you gave `setDir()` (`<dir>/<identifier>.php` in file mode,
+`<dir>/<identifier>/*.php` in directory mode) and the result is `require`d, so
+anything else — `../config/install`, a `/`, a `.`, a trailing newline, a NUL
+byte, an empty string — is rejected with a `TranslatorException` **before** any
+file is touched. The translator keeps its previous state when it rejects a code.
 
-If you accept a language identifier from user input (query string, cookie,
-header, form field), validate it against a known list **before** calling
-`change()` or `setDefault()`, so an unknown value falls back to a default:
+The check only keeps the lookup inside the language directory. It does not know
+which languages you support: a well-formed code such as `xx` still throws
+`TranslatorException` (file or directory not found), and any file that really
+exists in the language directory can be loaded. If you accept a language
+identifier from user input (query string, cookie, header, form field), validate
+it against a known list **before** calling `change()` or `setDefault()`, so an
+unknown value falls back to a default instead of raising an exception:
 
 ```php
 $supported = ['en', 'tr', 'fr'];
