@@ -45,7 +45,9 @@ te('hello'); // echoes
 ## Pick the language per request
 
 Resolve the active language from the request, always validating against a known
-list so an unknown value can't throw on a missing pack:
+list. `change()` does not check its argument and builds a file path from it, so
+an unvalidated value can load files outside your language directory (see
+[Exceptions](Exceptions.md#validate-user-supplied-language-codes)):
 
 ```php
 $supported = ['en', 'tr', 'fr'];
