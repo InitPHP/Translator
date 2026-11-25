@@ -18,15 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before any file is read. Previously the identifier was joined into the path of a
   file that was `require`d, so a request-supplied value such as `../config/install`
   could run PHP files outside the language directory. Codes that pointed into a
-  sub-directory of the language directory (`sub/en`, and `sub\en` on POSIX) worked
-  in 2.0.0 in both modes and are now rejected; a language pack must sit directly
-  in the language directory (or be a directory of its own in directory mode).
+  sub-directory of the language directory worked in 2.0.0 (`sub/en`, and `sub\en`
+  on Windows) and are now rejected, and so is a file name containing `\` on POSIX;
+  a language pack must sit directly in the language directory (or be a directory of
+  its own in directory mode).
   Every other name keeps working exactly as in 2.0.0 (`en_US`, `pt-BR`,
   `sr@latin`, `zh.Hant`, `türkçe`, names with a space). On Windows a `:` is also
   rejected, as it is not valid in a file name there. The translator's state is unchanged when a code is rejected.
-  Rejecting a code that points into a sub-directory is the one incompatible change
-  of this release; it ships as a patch release so that installations on `^2.0` get
-  the fix.
+  Rejecting these codes (a sub-directory path, an empty code, or one made only of
+  dots and spaces such as `.`) is the incompatible change of this release: for
+  example `useDirectory()->setDefault('.')` loaded the files of the language
+  directory itself in 2.0.0 and now throws. It ships as a patch release so that
+  installations on `^2.0` get the fix.
 - In directory mode the language path is matched literally by `glob()`: `*`, `?`
   and `[` in a language code or in the base directory are no longer wildcards, so
   a directory named like `.*` cannot also pull in the files of its parent.
