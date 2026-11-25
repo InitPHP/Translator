@@ -273,10 +273,14 @@ final class Translator implements TranslatorInterface
      */
     private function assertValidLanguageCode(string $lang): void
     {
-        if ($lang === '' || strpbrk($lang, "/\\\0") !== false || rtrim($lang, ' .') === '') {
+        // ":" is not valid in a Windows file name; there it can only address a
+        // drive-relative path or an alternate data stream, so it is refused.
+        $windowsColon = DIRECTORY_SEPARATOR === '\\' && str_contains($lang, ':');
+
+        if ($lang === '' || strpbrk($lang, "/\\\0") !== false || rtrim($lang, ' .') === '' || $windowsColon) {
             throw new TranslatorException(
-                'The language code is invalid. It must not be empty, contain "/", "\\" or a NUL byte, '
-                . 'or consist only of dots and spaces.',
+                'The language code is invalid. It must not be empty, contain "/", "\\" or a NUL byte '
+                . '(or ":" on Windows), or consist only of dots and spaces.',
             );
         }
     }

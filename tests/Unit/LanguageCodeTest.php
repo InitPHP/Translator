@@ -13,15 +13,17 @@ use function is_dir;
 use function mkdir;
 use function rmdir;
 use function scandir;
+use function str_contains;
 use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
 use function var_export;
 
 /**
- * A language code is joined into a path that is `require`d, so anything other
- * than `[A-Za-z0-9_-]+` must be rejected before a file is touched, and a
- * rejection must leave the translator untouched.
+ * A language code is joined into a path that is `require`d, so a code that is
+ * not a single, ordinary path component (empty, a separator, a NUL byte, only
+ * dots and spaces) must be rejected before a file is touched, and a rejection
+ * must leave the translator untouched.
  */
 final class LanguageCodeTest extends TestCase
 {
@@ -127,8 +129,9 @@ final class LanguageCodeTest extends TestCase
         try {
             $lang->change($code);
             self::fail('Expected a TranslatorException.');
-        } catch (TranslatorException) {
-            // Expected.
+        } catch (TranslatorException $e) {
+            // Rejected by the code rule itself, not by a missing file.
+            self::assertStringContainsString('language code is invalid', $e->getMessage());
         }
 
         self::assertArrayNotHasKey('translatorProbe', $GLOBALS);
@@ -146,8 +149,9 @@ final class LanguageCodeTest extends TestCase
         try {
             $lang->setDefault($code);
             self::fail('Expected a TranslatorException.');
-        } catch (TranslatorException) {
-            // Expected.
+        } catch (TranslatorException $e) {
+            // Rejected by the code rule itself, not by a missing file.
+            self::assertStringContainsString('language code is invalid', $e->getMessage());
         }
 
         self::assertArrayNotHasKey('translatorProbe', $GLOBALS);
@@ -165,8 +169,9 @@ final class LanguageCodeTest extends TestCase
         try {
             $lang->change($code);
             self::fail('Expected a TranslatorException.');
-        } catch (TranslatorException) {
-            // Expected.
+        } catch (TranslatorException $e) {
+            // Rejected by the code rule itself, not by a missing file.
+            self::assertStringContainsString('language code is invalid', $e->getMessage());
         }
 
         self::assertArrayNotHasKey('translatorProbe', $GLOBALS);
@@ -184,8 +189,9 @@ final class LanguageCodeTest extends TestCase
         try {
             $lang->setDefault($code);
             self::fail('Expected a TranslatorException.');
-        } catch (TranslatorException) {
-            // Expected.
+        } catch (TranslatorException $e) {
+            // Rejected by the code rule itself, not by a missing file.
+            self::assertStringContainsString('language code is invalid', $e->getMessage());
         }
 
         self::assertArrayNotHasKey('translatorProbe', $GLOBALS);
@@ -229,6 +235,10 @@ final class LanguageCodeTest extends TestCase
      */
     public function testOtherCodesAreJustMissingPacks(string $code): void
     {
+        if (\DIRECTORY_SEPARATOR === '\\' && str_contains($code, ':')) {
+            self::markTestSkipped('A colon is rejected on Windows.');
+        }
+
         $lang = (new Translator())->setDir($this->languages)->setDefault('en');
 
         try {
@@ -292,19 +302,47 @@ final class LanguageCodeTest extends TestCase
     }
 
     /**
-     * Where a directory literally named `.*` exists, the unescaped pattern
-     * `languages/.*\/*.php` would also match `..` and load the PHP files of the
-     * language directory's parent.
+     * Where a directory literally named like a wildcard exists, the unescaped
+     * pattern would also match `..` and load the PHP files of the language
+     * directory's parent. Each of `*`, `?` and `[` is needed to escape one of
+     * these, so each case drops a different escape.
+     *
+     * @return array<string, array{string}>
      */
-    public function testALiteralDirectoryNamedLikeAWildcardDoesNotReachTheParent(): void
+    public static function wildcardNamedDirectories(): array
     {
-        mkdir($this->languages . '/.*');
-        file_put_contents($this->languages . '/.*/main.php', '<?php return [\'hello\' => \'Literal\'];');
+        return [
+            'star'               => ['.*'],
+            'question mark'      => ['.?'],
+            'bracket class'      => ['[.]*'],
+            'bracketed dots'     => ['[.][.]'],
+        ];
+    }
+
+    /**
+     * @dataProvider wildcardNamedDirectories
+     */
+    public function testALiteralDirectoryNamedLikeAWildcardDoesNotReachTheParent(string $code): void
+    {
+        mkdir($this->languages . '/' . $code);
+        file_put_contents($this->languages . '/' . $code . '/main.php', '<?php return [\'hello\' => \'Literal\'];');
         $lang = (new Translator())->useDirectory()->setDir($this->languages)->setDefault('en');
 
-        self::assertSame('Literal', $lang->change('.*')->translate('main.hello'));
+        self::assertSame('Literal', $lang->change($code)->translate('main.hello'));
         self::assertArrayNotHasKey('translatorProbe', $GLOBALS);
         self::assertSame('outside.hello', $lang->translate('outside.hello'));
+    }
+
+    public function testAColonIsRejectedWhereItIsNotAValidFileNameCharacter(): void
+    {
+        if (\DIRECTORY_SEPARATOR !== '\\') {
+            self::markTestSkipped('A colon in a language code is only rejected on Windows.');
+        }
+
+        $this->expectException(TranslatorException::class);
+        $this->expectExceptionMessage('language code is invalid');
+
+        (new Translator())->setDir($this->languages)->change('en:stream');
     }
 
     private function remove(string $path): void

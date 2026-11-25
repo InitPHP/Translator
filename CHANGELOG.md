@@ -14,9 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the forms Windows normalises to them) by throwing `TranslatorException`
   before any file is read. Previously the identifier was joined into the path of a
   file that was `require`d, so a request-supplied value such as `../config/install`
-  could run PHP files outside the language directory. Every other name keeps
-  working exactly as in 2.0.0 (`en_US`, `pt-BR`, `sr@latin`, `zh.Hant`, `türkçe`,
-  names with a space). The translator's state is unchanged when a code is rejected.
+  could run PHP files outside the language directory. Codes that pointed into a
+  sub-directory of the language directory (`sub/en`, and `sub\en` on POSIX) worked
+  in 2.0.0 in both modes and are now rejected; a language pack must sit directly
+  in the language directory (or be a directory of its own in directory mode).
+  Every other name keeps working exactly as in 2.0.0 (`en_US`, `pt-BR`,
+  `sr@latin`, `zh.Hant`, `türkçe`, names with a space). On Windows a `:` is also
+  rejected, as it is not valid in a file name there. The translator's state is unchanged when a code is rejected.
 - In directory mode the language path is matched literally by `glob()`: `*`, `?`
   and `[` in a language code or in the base directory are no longer wildcards, so
   a directory named like `.*` cannot also pull in the files of its parent.
