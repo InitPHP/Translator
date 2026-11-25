@@ -158,9 +158,9 @@ $lang->translate('errorMsg', null, ['code' => 2005]);
 All configuration methods return `$this`, so calls can be chained.
 
 > **Security:** the identifier given to `setDefault()` / `change()` is joined into
-> a file path and the file is `require`d, so only letters, digits, `_` and `-` are
-> accepted; anything else throws a `TranslatorException` before a file is touched.
-> Still check request input (`$_GET`, cookies, headers) against an allow-list such
+> a file path and the file is `require`d, so an empty identifier, one containing `/`,
+> `\` or a NUL byte, or one made only of dots and spaces (`.`, `..`) throws a
+> `TranslatorException` before a file is touched. Still check request input (`$_GET`, cookies, headers) against an allow-list such
 > as `['en', 'tr', 'fr']` first, so an unsupported language falls back instead of
 > throwing. See
 > [Exceptions](docs/Exceptions.md#validate-user-supplied-language-codes).

@@ -9,14 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- `setDefault()` and `change()` now reject a language identifier that is empty or
-  contains anything other than letters, digits, `_` and `-` (checked with `\A…\z`,
-  so a trailing newline is rejected too) by throwing `TranslatorException` before
-  any file is read. Previously the identifier was joined into the path of a file
-  that was `require`d, so a request-supplied value such as `../config/install`
-  could run PHP files outside the language directory. The translator's state is
-  unchanged when a code is rejected. Codes such as `en`, `en_US` and `pt-BR` keep
-  working; a language pack whose name used `.` or `/` must be renamed.
+- `setDefault()` and `change()` now reject a language identifier that is empty,
+  contains `/`, `\` or a NUL byte, or consists only of dots and spaces (`.`, `..`,
+  and the forms Windows normalises to them) by throwing `TranslatorException`
+  before any file is read. Previously the identifier was joined into the path of a
+  file that was `require`d, so a request-supplied value such as `../config/install`
+  could run PHP files outside the language directory. Every other name keeps
+  working exactly as in 2.0.0 (`en_US`, `pt-BR`, `sr@latin`, `zh.Hant`, `türkçe`,
+  names with a space). The translator's state is unchanged when a code is rejected.
+- In directory mode the language path is matched literally by `glob()`: `*`, `?`
+  and `[` in a language code or in the base directory are no longer wildcards, so
+  a directory named like `.*` cannot also pull in the files of its parent.
 
 ### Fixed
 

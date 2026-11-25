@@ -20,9 +20,9 @@ use function glob;
 use function is_dir;
 use function is_file;
 use function method_exists;
-use function preg_match;
 use function rtrim;
 use function str_contains;
+use function strpbrk;
 use function strtolower;
 use function strtr;
 
@@ -257,23 +257,41 @@ final class Translator implements TranslatorInterface
     }
 
     /**
-     * Rejects a language identifier that could escape the language directory.
+     * Rejects a language identifier that is not a single, ordinary path component.
      *
-     * The identifier is joined into a path that is then `require`d, so only
-     * letters, digits, `_` and `-` are accepted. `\z` (not `$`) keeps a trailing
-     * newline from slipping through.
+     * The identifier is joined into a path that is then `require`d, so it must
+     * stay inside the language directory: it may not be empty, contain a path
+     * separator (`/`, and `\` which separates on Windows) or a NUL byte, and may
+     * not consist only of dots and spaces. The last rule covers `.` and `..` and
+     * the forms Windows normalises to them (`...`, `.. `, `. .`), which would
+     * select the language directory itself or its parent. Everything else, such
+     * as `en_US`, `sr@latin`, `zh.Hant` or `türkçe`, is an ordinary file name.
      *
      * @param string $lang The language identifier to check.
      * @return void
-     * @throws TranslatorException If the identifier contains any other character, or is empty.
+     * @throws TranslatorException If the identifier is rejected.
      */
     private function assertValidLanguageCode(string $lang): void
     {
-        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $lang) !== 1) {
+        if ($lang === '' || strpbrk($lang, "/\\\0") !== false || rtrim($lang, ' .') === '') {
             throw new TranslatorException(
-                'The language code is invalid. Only letters, digits, "_" and "-" are allowed.',
+                'The language code is invalid. It must not be empty, contain "/", "\\" or a NUL byte, '
+                . 'or consist only of dots and spaces.',
             );
         }
+    }
+
+    /**
+     * Escapes the characters `glob()` treats as wildcards, so that a language
+     * code such as `.*` or `[.][.]` names a directory literally instead of
+     * expanding to `..` and reaching files outside the language directory.
+     *
+     * @param string $path The literal path to use as a glob pattern.
+     * @return string The pattern that matches exactly that path.
+     */
+    private function escapeGlob(string $path): string
+    {
+        return strtr($path, ['*' => '[*]', '?' => '[?]', '[' => '[[]']);
     }
 
     /**
@@ -344,7 +362,7 @@ final class Translator implements TranslatorInterface
             throw new TranslatorException('The translation directory was not found: "' . $path . '".');
         }
 
-        $files = glob($path . '*.php');
+        $files = glob($this->escapeGlob($path) . '*.php');
         if ($files === false) {
             throw new TranslatorException('The translation directory could not be read: "' . $path . '".');
         }

@@ -95,11 +95,12 @@ has been chosen yet, this language also becomes the active one.
 
 - **`$default`** — language identifier (a file name without extension in file
   mode, or a sub-directory name in directory mode). It is joined into a path and
-  the file is `require`d, so only letters, digits, `_` and `-` are accepted;
+  the file is `require`d, so it must be a single path component (see
+  [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes));
   validate request input against an allow-list anyway — see
   [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
-- **Throws** [`TranslatorException`](Exceptions.md) if the identifier is empty or
-  contains any other character, if the directory is unset, or the language pack
+- **Throws** [`TranslatorException`](Exceptions.md) if the identifier is empty,
+  contains `/`, `\` or a NUL byte, or consists only of dots and spaces, if the directory is unset, or the language pack
   is missing, unreadable, or does not return an array. On any of these the
   translator keeps its previous state (see [Exceptions](Exceptions.md)).
 
@@ -119,8 +120,7 @@ Switches the active language, loading it on first use. If no default language ha
 been set yet, the given language also becomes the default.
 
 - **`$current`** — language identifier to activate. Like `setDefault()`, it is
-  joined into a path and the file is `require`d, so only letters, digits, `_` and
-  `-` are accepted. Do not pass request input directly; check it against an
+  joined into a path and the file is `require`d, so the same rule applies. Do not pass request input directly; check it against an
   allow-list first — see
   [Validate user-supplied language codes](Exceptions.md#validate-user-supplied-language-codes).
 - **Throws** [`TranslatorException`](Exceptions.md) under the same conditions as
