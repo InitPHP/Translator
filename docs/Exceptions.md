@@ -22,7 +22,7 @@ class TranslatorException extends \Exception {}
 | A language **file** is missing (file mode) | `setDefault()` / `change()` | `The translation file was not found: "/app/languages/de.php".` |
 | A language **directory** is missing (directory mode) | `setDefault()` / `change()` | `The translation directory was not found: "/app/languages/de/".` |
 | A directory could not be read | `setDefault()` / `change()` | `The translation directory could not be read: "...".` |
-| The language identifier contains anything other than letters, digits, `_` and `-` (or is empty) | `setDefault()` / `change()` | `The language code is invalid. Only letters, digits, "_" and "-" are allowed.` |
+| The language identifier is empty, contains `/`, `\` or a NUL byte (or `:` on Windows), or consists only of dots and spaces | `setDefault()` / `change()` | `The language code is invalid. It must not be empty, contain "/", "\" or a NUL byte (or ":" on Windows), or consist only of dots and spaces.` |
 | A language file does not `return` an array | `setDefault()` / `change()` | `The translation file "/app/languages/en.php" must return an array.` |
 
 Every message names the offending path or condition.
@@ -77,13 +77,29 @@ try {
 
 ## Validate user-supplied language codes
 
-`setDefault()` and `change()` only accept identifiers made of letters, digits,
-`_` and `-` (`en`, `en_US`, `pt-BR`). The identifier is appended to the directory
+The identifier given to `setDefault()` and `change()` is appended to the directory
 you gave `setDir()` (`<dir>/<identifier>.php` in file mode,
-`<dir>/<identifier>/*.php` in directory mode) and the result is `require`d, so
-anything else — `../config/install`, a `/`, a `.`, a trailing newline, a NUL
-byte, an empty string — is rejected with a `TranslatorException` **before** any
-file is touched.
+`<dir>/<identifier>/*.php` in directory mode) and the result is `require`d. It
+must therefore be a single, ordinary path component, and these are rejected with
+a `TranslatorException` **before** any file is touched:
+
+- an empty identifier,
+- a `/` or a `\` (both separate path components on Windows), so `../config/install`
+  and `en/../../x` cannot leave the language directory,
+- a NUL byte,
+- a `:` on Windows, where it is not valid in a file name and could only address a
+  drive-relative path or an alternate data stream,
+- an identifier made only of dots and spaces: `.` and `..`, and the forms Windows
+  normalises to them (`...`, `.. `, `. .`).
+
+Everything else is an ordinary file name and works as before: `en`, `en_US`,
+`pt-BR`, `sr@latin`, `zh.Hant`, `türkçe`, even a name with a space. Outside
+Windows a `:` is an ordinary character, too; a drive letter or a stream-wrapper
+prefix such as `phar:` or `php:` only counts at the very start of a path, and that
+start is your `setDir()` path. Because a code cannot contain a separator it is one
+path component and cannot leave the language directory. In
+directory mode the `*`, `?` and `[` characters are matched literally, not as
+`glob()` wildcards.
 
 The check only keeps the lookup inside the language directory. It does not know
 which languages you support: a well-formed code such as `xx` still throws

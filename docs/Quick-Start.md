@@ -115,8 +115,8 @@ $lang->setDir(__DIR__ . '/languages/')
     ->setDefault('en');
 
 // Per request, choose a language. The identifier becomes part of a file path
-// (anything but letters, digits, "_" and "-" is rejected), and an unknown but
-// well-formed code throws, so pass a value from your own allow-list:
+// (a separator, a NUL byte, an empty value or ".." is rejected), and an unknown
+// but well-formed code throws, so pass a value from your own allow-list:
 $supported = ['en', 'tr', 'fr'];
 $requested = $_GET['lang'] ?? 'en';
 
@@ -130,8 +130,8 @@ echo $lang->translate('welcome', 'Welcome {user}', [
 ## Common mistakes
 
 - **Passing request input straight to `change()`.** The identifier is joined
-  into a path and the file is `require`d. Characters outside `[A-Za-z0-9_-]` are
-  rejected, but an unsupported code still throws — see
+  into a path and the file is `require`d. A separator, a NUL byte, an empty value
+  or `..` is rejected, but an unsupported code still throws — see
   [Exceptions](Exceptions.md#validate-user-supplied-language-codes).
 - **Setting the layout mode too late.** Calling `useDirectory()` after a language
   has loaded throws. Set the mode first — see [Troubleshooting](Troubleshooting.md).

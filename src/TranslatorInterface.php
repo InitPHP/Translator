@@ -50,9 +50,10 @@ interface TranslatorInterface
      *                        extension in file mode, or a sub-directory name in
      *                        directory mode).
      * @return TranslatorInterface The same instance, for chaining.
-     * @throws TranslatorException If the identifier is empty or contains anything
-     *                             other than letters, digits, `_` and `-`, the
-     *                             directory is not set, or the language pack cannot
+     * @throws TranslatorException If the identifier is empty, contains `/`, `\`
+     *                             or a NUL byte (or `:` on Windows), or consists
+     *                             only of dots and spaces, the directory is not
+     *                             set, or the language pack cannot
      *                             be found, read or does not return an array. The
      *                             translator keeps its previous state on failure.
      */
@@ -91,9 +92,10 @@ interface TranslatorInterface
      *
      * @param string $current Language identifier to activate.
      * @return TranslatorInterface The same instance, for chaining.
-     * @throws TranslatorException If the identifier is empty or contains anything
-     *                             other than letters, digits, `_` and `-`, the
-     *                             directory is not set, or the language pack cannot
+     * @throws TranslatorException If the identifier is empty, contains `/`, `\`
+     *                             or a NUL byte (or `:` on Windows), or consists
+     *                             only of dots and spaces, the directory is not
+     *                             set, or the language pack cannot
      *                             be found, read or does not return an array. The
      *                             translator keeps its previous state on failure.
      */
