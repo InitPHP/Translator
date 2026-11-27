@@ -295,7 +295,15 @@ final class Translator implements TranslatorInterface
      */
     private function escapeGlob(string $path): string
     {
-        return strtr($path, ['*' => '[*]', '?' => '[?]', '[' => '[[]']);
+        $map = ['*' => '[*]', '?' => '[?]', '[' => '[[]'];
+        // On POSIX a backslash escapes the next character in a glob pattern, so
+        // a literal one in the directory name has to be escaped too. On Windows
+        // it is the directory separator and must stay as it is.
+        if (DIRECTORY_SEPARATOR === '/') {
+            $map['\\'] = '\\\\';
+        }
+
+        return strtr($path, $map);
     }
 
     /**
