@@ -333,6 +333,21 @@ final class LanguageCodeTest extends TestCase
         self::assertSame('outside.hello', $lang->translate('outside.hello'));
     }
 
+    public function testADirectoryContainingABackslashIsReadOnPosix(): void
+    {
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            self::markTestSkipped('A backslash is a path separator on Windows.');
+        }
+
+        $dir = $this->base . '/b\\y';
+        mkdir($dir . '/en', 0o777, true);
+        file_put_contents($dir . '/en/main.php', '<?php return [\'hello\' => \'Backslash\'];');
+
+        $lang = (new Translator())->useDirectory()->setDir($dir)->setDefault('en');
+
+        self::assertSame('Backslash', $lang->translate('main.hello'));
+    }
+
     public function testAColonIsRejectedWhereItIsNotAValidFileNameCharacter(): void
     {
         if (\DIRECTORY_SEPARATOR !== '\\') {
