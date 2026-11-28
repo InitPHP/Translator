@@ -76,7 +76,7 @@ in a long-running worker without your own synchronization.
 
 ## Which PHP versions are supported?
 
-PHP **8.2+**, tested in CI on 8.2, 8.3, 8.4 and 8.5. See [Installation](Installation.md).
+PHP **8.2+**, tested in CI on 8.2, 8.3, 8.4, 8.5 and 8.6. See [Installation](Installation.md).
 
 ## Where do I report a bug or ask a question?
 

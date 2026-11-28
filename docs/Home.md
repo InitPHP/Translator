@@ -82,7 +82,7 @@ fallback you passed → the default language → the key itself. See
 ## Package metadata
 
 - **License**: MIT
-- **Minimum PHP**: 8.2 (tested on 8.2 – 8.5)
+- **Minimum PHP**: 8.2 (tested on 8.2 – 8.6)
 - **Runtime dependencies**: none
 - **Packagist**: [`initphp/translator`](https://packagist.org/packages/initphp/translator)
 - **Source**: [github.com/InitPHP/Translator](https://github.com/InitPHP/Translator)

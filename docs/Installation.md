@@ -7,7 +7,7 @@ short smoke test before moving on to the [Quick Start](Quick-Start.md).
 
 | | |
 | --- | --- |
-| PHP | `^8.2` (tested on 8.2, 8.3, 8.4, 8.5) |
+| PHP | `^8.2` (tested on 8.2, 8.3, 8.4, 8.5, 8.6) |
 | Extensions | None beyond the PHP core |
 | Runtime dependencies | None |
 
@@ -68,7 +68,7 @@ If you see `Hello Ada`, autoloading, file loading, and interpolation all work.
 
 ## Supported PHP versions in CI
 
-Every change runs the test matrix against PHP 8.2, 8.3, 8.4 and 8.5 (plus a
+Every change runs the test matrix against PHP 8.2, 8.3, 8.4, 8.5 and 8.6 (plus a
 lowest-dependency run on 8.2). If you find a regression on a supported version,
 please [file an issue](https://github.com/InitPHP/Translator/issues/new) and
 include the version reported by `php -v`.
